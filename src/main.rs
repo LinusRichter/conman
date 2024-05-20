@@ -1,4 +1,5 @@
-mod statemanager;
+mod state_manager;
+mod docker_manager;
 
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
@@ -8,7 +9,7 @@ use ratatui::{prelude::{CrosstermBackend, Terminal}};
 use std::io::{stdout, Result};
 use std::time::Duration;
 use crossterm::event::{Event, poll};
-use crate::statemanager::StateManager;
+use crate::state_manager::StateManager;
 
 fn main() -> Result<()> {
     stdout().execute(EnterAlternateScreen)?;
@@ -17,7 +18,6 @@ fn main() -> Result<()> {
     terminal.clear()?;
 
     let mut state_manager = StateManager::new();
-    let mut index: u32 = 0;
 
     loop {
         terminal.draw(|frame| { state_manager.render(frame); })?;
@@ -27,19 +27,11 @@ fn main() -> Result<()> {
                 if key.kind == KeyEventKind::Press {
                     match key.code {
                         KeyCode::Backspace => { state_manager.back(); }
-                        KeyCode::Enter => { state_manager.next(index); }
+                        KeyCode::Enter => { state_manager.next(); }
                         KeyCode::Left => { state_manager.back(); }
-                        KeyCode::Right => { state_manager.next(index); }
-                        KeyCode::Up => {
-                            if index >= 1 {
-                                index -= 1;
-                                state_manager.update_state_index(index);
-                            }
-                        }
-                        KeyCode::Down => {
-                            index += 1;
-                            state_manager.update_state_index(index);
-                        }
+                        KeyCode::Right => { state_manager.next(); }
+                        KeyCode::Up => { state_manager.update_state_index(-1); }
+                        KeyCode::Down => { state_manager.update_state_index(1); }
                         KeyCode::Esc => { break; }
                         _ => {}
                     }
