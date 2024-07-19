@@ -15,13 +15,13 @@ pub enum State {
 }
 
 #[derive(Clone, Debug)]
-pub struct StateManager {
+pub struct StateManager<'a> {
     pub state_stack: Vec<State>,
-    pub docker_manager: DockerManager,
+    pub docker_manager: DockerManager<'a>,
     pub select_index: u32
 }
 
-impl StateManager {
+impl StateManager<'_> {
     pub fn new() -> Self {
         Self {
             state_stack: vec![State::ContainerSelect(0)],
@@ -49,19 +49,22 @@ impl StateManager {
     }
     pub fn render(&self, frame: &mut Frame) {
         let Rect {
-            mut x,
-            mut y,
-            mut width,
-            mut height
+            x,
+            y,
+            width,
+            height
         } = frame.size();
 
-        for state in self.state_stack.iter() {
+        let mut cur_x = x;
+
+        for (index, state) in self.state_stack.iter().enumerate() {
+            let cur_width = if index >= 2 { width / 5 * 3 } else { width / 5 };
             self.draw_state(
                 frame,
-                Rect::new(x,y,width / 5,height),
+                Rect::new(cur_x, y, cur_width, height),
                 state,
             );
-            x += width / 5;
+            cur_x += width / 5;
         }
     }
     pub fn draw_state(&self, frame: &mut Frame, area: Rect, state: &State) {
