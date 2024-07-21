@@ -14,20 +14,24 @@ pub enum State {
     Error
 }
 
-#[derive(Clone, Debug)]
-pub struct StateManager<'a> {
+#[derive(Debug)]
+pub struct StateManager {
     pub state_stack: Vec<State>,
-    pub docker_manager: DockerManager<'a>,
+    pub docker_manager: DockerManager,
     pub select_index: u32
 }
 
-impl StateManager<'_> {
-    pub fn new() -> Self {
-        Self {
-            state_stack: vec![State::ContainerSelect(0)],
-            docker_manager: DockerManager::new(),
-            select_index: 0
-        }
+impl StateManager {
+    pub async fn new() -> Option<Self> {
+        let docker_manager = DockerManager::new().await;
+        if docker_manager.is_none() { return None; }
+        Some(
+            Self {
+                state_stack: vec![State::ContainerSelect(0)],
+                docker_manager: docker_manager.unwrap(),
+                select_index: 0
+            }
+        )
     }
     pub fn next(&mut self) {
         match &self.state_stack.last().unwrap_or(&State::Error) {
@@ -70,18 +74,24 @@ impl StateManager<'_> {
     pub fn draw_state(&self, frame: &mut Frame, area: Rect, state: &State) {
         match state {
             State::ContainerSelect(index) => {
-                let container_names: Vec<Line> = self.docker_manager.get_containers()
+                let containers = self.docker_manager.get_containers();
+                let container_names: Vec<Line> = containers
                     .iter()
                     .enumerate()
-                    .map(|(i, &container)| {
+                    .map(|(i, container)| {
+                        let name = container
+                            .clone()
+                            .names.unwrap()
+                            .pop().unwrap_or(String::from("errorName"));
+
                         if i as u32 == *index {
-                            return Line::from(container.name)
+                            return Line::from(name)
                                 .style(Style::default()
                                     .fg(Color::Black)
                                     .bg(Color::White)
                                 );
                         }
-                        Line::from(container.name)
+                        Line::from(name)
                     }).collect();
 
                 frame.render_widget(
@@ -96,16 +106,17 @@ impl StateManager<'_> {
                 );
             }
             State::OptionSelect(index) => {
-                let container_options: Vec<Line> = self.docker_manager.get_container_options()
+                let container_options = self.docker_manager.get_container_options();
+                let container_options_name: Vec<Line> = container_options
                     .iter()
                     .enumerate()
-                    .map(|(i, &s)| {
-                        if i as u32 == *index { return Line::from(s).style(Style::default().fg(Color::Black).bg(Color::White)); }
-                        Line::from(s)
+                    .map(|(i, s)| {
+                        if i as u32 == *index { return Line::from(s.as_str()).style(Style::default().fg(Color::Black).bg(Color::White)); }
+                        Line::from(s.as_str())
                     }).collect();
 
                 frame.render_widget(
-                    Paragraph::new(container_options).block(
+                    Paragraph::new(container_options_name).block(
                         Block::default()
                             .title(Title::from(" Options ").alignment(Alignment::Center))
                             .border_style(Style::default().fg(Color::White))
