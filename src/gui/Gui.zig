@@ -1,5 +1,6 @@
 const std = @import("std");
-const vxfw = @import("vaxis").vxfw;
+const vaxis = @import("vaxis");
+const vxfw = vaxis.vxfw;
 const StateManager = @import("statemanager.zig").StateManager;
 
 pub const TerminalGui = struct {
@@ -34,31 +35,34 @@ pub const TerminalGui = struct {
         const self: *TerminalGui = @ptrCast(@alignCast(ptr));
         const max_size = ctx.max.size();
 
-        const count_text = try std.fmt.allocPrint(ctx.arena, "{d}", .{self.state_manager.testu});
-        const text: vxfw.Text = .{ .text = count_text };
+        //const count_text = try std.fmt.allocPrint(ctx.arena, "{d}", .{self.state_manager.testu});
+        const entity_column_string = try std.fmt.allocPrint(ctx.arena, "{s}", .{"Choose Entity"});
+        const result_column_string = try std.fmt.allocPrint(ctx.arena, "{s}", .{"Choose Result"});
+        const action_column_string = try std.fmt.allocPrint(ctx.arena, "{s}", .{"Choose Action"});
 
-        const counter_border: vxfw.Border = .{
-            .child = text.widget()
-        };
+        const entity_column_text: vxfw.Text = .{ .text = entity_column_string };
+        const result_column_text: vxfw.Text = .{ .text = result_column_string };
+        const action_column_text: vxfw.Text = .{ .text = action_column_string };
 
-        const button_border: vxfw.Border = .{
-            .child = text.widget()
-        };
+        const entity_column: vxfw.Border = .{ .child = entity_column_text.widget() };
+        const result_column: vxfw.Border = .{ .child = result_column_text.widget() };
+        const action_column: vxfw.Border = .{ .child = action_column_text.widget() };
 
-        const flex: vxfw.FlexRow = .{
+        const flex_row: vxfw.FlexRow = .{
             .children = &.{
-                .{ .widget = counter_border.widget(), .flex = 2},
-                .{ .widget = button_border.widget(), .flex = 1},
+                .{ .widget = entity_column.widget(), .flex = 1},
+                .{ .widget = result_column.widget(), .flex = 2},
+                .{ .widget = action_column.widget(), .flex = 1},
             }
         };
 
-        const flex_child: vxfw.SubSurface = .{
+        const flex_surface: vxfw.SubSurface = .{
             .origin = .{ .row = 0, .col = 0 },
-            .surface = try flex.draw(ctx),
+            .surface = try flex_row.draw(ctx),
         };
 
         const children = try ctx.arena.alloc(vxfw.SubSurface, 1);
-        children[0] = flex_child;
+        children[0] = flex_surface;
 
         return .{
             .size = max_size,
