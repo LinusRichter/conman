@@ -1,6 +1,6 @@
-# Dockerman
+# Conman
 
-**Dockerman** is a Terminal User Interface for Docker, built in [Zig](https://ziglang.org) using the [Vaxis](https://github.com/rockorager/libvaxis) UI toolkit.
+**Conman** is a Terminal User Interface for Docker, built in [Zig](https://ziglang.org) using the [Vaxis](https://github.com/rockorager/libvaxis) UI toolkit.
 
 ---
 
